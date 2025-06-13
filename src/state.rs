@@ -34,9 +34,9 @@ impl State {
     }
 
     fn update_policy_features(&mut self) {
-        let mut vec = SparseVector::with_capacity(32);
-        self.policy_features_map(|idx| vec.push(idx));
-        self.policy_features = vec;
+        self.policy_features.clear();
+        let pf_ptr: *mut SparseVector = &mut self.policy_features;
+        self.policy_features_map(|idx| unsafe { (*pf_ptr).push(idx) });
     }
 
     #[must_use]

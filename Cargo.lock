@@ -157,7 +157,6 @@ checksum = "a8d1add55171497b4705a648c6b583acafb01d58050a51727785f0b2c8e0a2b2"
 [[package]]
 name = "goober"
 version = "0.1.0"
-source = "git+https://github.com/jw1912/goober/?rev=32b9b52#32b9b52e68ef03d9d706548fb21bb3c4535c4dd2"
 dependencies = [
  "goober-core",
  "goober-derive",
@@ -167,12 +166,10 @@ dependencies = [
 [[package]]
 name = "goober-core"
 version = "0.1.0"
-source = "git+https://github.com/jw1912/goober/?rev=32b9b52#32b9b52e68ef03d9d706548fb21bb3c4535c4dd2"
 
 [[package]]
 name = "goober-derive"
 version = "0.1.0"
-source = "git+https://github.com/jw1912/goober/?rev=32b9b52#32b9b52e68ef03d9d706548fb21bb3c4535c4dd2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -182,7 +179,6 @@ dependencies = [
 [[package]]
 name = "goober-layer"
 version = "0.1.0"
-source = "git+https://github.com/jw1912/goober/?rev=32b9b52#32b9b52e68ef03d9d706548fb21bb3c4535c4dd2"
 dependencies = [
  "goober-core",
 ]
