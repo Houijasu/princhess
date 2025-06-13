@@ -1,4 +1,3 @@
-use goober::SparseVector;
 
 use crate::chess::MoveList;
 use crate::math;
@@ -108,8 +107,7 @@ fn run_policy_net(_state: &State, moves: &MoveList, _t: f32) -> Vec<f32> {
 
 #[cfg(feature = "policy-net")]
 fn run_policy_net(state: &State, moves: &MoveList, t: f32) -> Vec<f32> {
-    let mut features = SparseVector::with_capacity(32);
-    state.policy_features_map(|idx| features.push(idx));
+    let features = state.policy_features();
 
     let mut evalns = vec![0.0; moves.len()];
 

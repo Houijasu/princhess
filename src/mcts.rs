@@ -1,4 +1,3 @@
-use arrayvec::ArrayVec;
 use fastapprox::faster;
 use std::f32;
 use std::fmt::{Display, Write};
@@ -17,7 +16,7 @@ use crate::state::State;
 use crate::time_management::TimeManagement;
 use crate::transposition_table::{LRTable, TranspositionTable};
 
-const MAX_PLAYOUT_LENGTH: usize = 256;
+pub const MAX_PLAYOUT_LENGTH: usize = 256;
 
 const PV_EVAL_MIN_DEPTH: usize = 4;
 
@@ -104,14 +103,14 @@ impl Mcts {
     ) -> bool {
         let mut state = self.root_state.clone();
         let mut node: &'a PositionNode = &self.root_node;
-        let mut path: ArrayVec<&'a MoveEdge, MAX_PLAYOUT_LENGTH> = ArrayVec::new();
+        tld.path.clear();
         let mut evaln = 0;
 
         loop {
             // If the current node is not the root node (path is not empty) and it is stale relative
             // to the current active arena's generation, abort the playout. The root node's arena
             // is separate and its generation is stable.
-            if !path.is_empty() && node.is_stale(tld.ttable.current_generation()) {
+            if !tld.path.is_empty() && node.is_stale(tld.ttable.current_generation()) {
                 return true;
             }
 
@@ -121,11 +120,11 @@ impl Mcts {
             if node.is_tablebase() && state.halfmove_clock() == 0 {
                 break;
             }
-            if path.len() >= MAX_PLAYOUT_LENGTH {
+            if tld.path.len() >= MAX_PLAYOUT_LENGTH {
                 break;
             }
 
-            let fpu = path.last().map_or(0, |x| -x.reward().average);
+            let fpu = tld.path.last().map_or(0, |x| -x.reward().average);
 
             let mcts_options = MctsOptions {
                 cpuct,
@@ -134,7 +133,7 @@ impl Mcts {
 
             let choice = Mcts::select(node.edges(), fpu, &mcts_options);
             choice.down();
-            path.push(choice);
+            tld.path.push(choice);
             state.make_move(*choice.get_move());
 
             if choice.visits() == 1 {
@@ -177,9 +176,9 @@ impl Mcts {
 
         evaln = node.flag().adjust_eval(evaln);
 
-        Self::finish_playout(&path, evaln);
+        Self::finish_playout(&tld.path, evaln);
 
-        let depth = path.len();
+        let depth = tld.path.len();
         let num_nodes = self.num_nodes.fetch_add(depth, Ordering::Relaxed) + depth;
         self.max_depth.fetch_max(depth, Ordering::Relaxed);
         self.playouts.fetch_add(1, Ordering::Relaxed);

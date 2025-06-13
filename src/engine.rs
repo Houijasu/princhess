@@ -1,4 +1,5 @@
 use rayon::{ThreadPool, ThreadPoolBuilder};
+use arrayvec::ArrayVec;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::chess::Move;
@@ -19,6 +20,7 @@ pub struct ThreadData<'a> {
     pub ttable: &'a LRTable,
     pub allocator: LRAllocator<'a>,
     pub playouts: usize,
+    pub path: ArrayVec<&'a MoveEdge, { crate::mcts::MAX_PLAYOUT_LENGTH }>,
 }
 
 impl<'a> ThreadData<'a> {
@@ -27,6 +29,7 @@ impl<'a> ThreadData<'a> {
             ttable,
             allocator: ttable.allocator(),
             playouts: 0,
+            path: ArrayVec::new(),
         }
     }
 }
