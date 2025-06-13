@@ -47,12 +47,42 @@ impl<T: AddAssign, const H: usize> Accumulator<T, H> {
 
 impl<const H: usize> Accumulator<i16, H> {
     pub fn dot_relu(&self, rhs: &Accumulator<i16, H>) -> f32 {
-        let mut result: i32 = 0;
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        unsafe {
+            if std::arch::is_x86_feature_detected!("sse2") {
+                return self.dot_relu_sse2(rhs);
+            }
+        }
 
+        let mut result: i32 = 0;
         for (a, b) in self.vals.iter().zip(&rhs.vals) {
             result += relu(*a) * relu(*b);
         }
+        result as f32 / QAA as f32
+    }
 
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    #[target_feature(enable = "sse2")]
+    unsafe fn dot_relu_sse2(&self, rhs: &Accumulator<i16, H>) -> f32 {
+        use core::arch::x86_64::*;
+        let mut sum = _mm_setzero_si128();
+        let zero = _mm_setzero_si128();
+        let mut i = 0;
+        while i + 8 <= H {
+            let a = _mm_loadu_si128(self.vals.as_ptr().add(i) as *const __m128i);
+            let b = _mm_loadu_si128(rhs.vals.as_ptr().add(i) as *const __m128i);
+            let a = _mm_max_epi16(a, zero);
+            let b = _mm_max_epi16(b, zero);
+            let prod = _mm_madd_epi16(a, b);
+            sum = _mm_add_epi32(sum, prod);
+            i += 8;
+        }
+        let mut tmp = [0i32; 4];
+        _mm_storeu_si128(tmp.as_mut_ptr() as *mut __m128i, sum);
+        let mut result = tmp.iter().sum::<i32>();
+        for j in i..H {
+            result += relu(self.vals[j]) * relu(rhs.vals[j]);
+        }
         result as f32 / QAA as f32
     }
 }

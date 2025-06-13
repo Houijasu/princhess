@@ -1,4 +1,5 @@
 use arrayvec::ArrayVec;
+use goober::SparseVector;
 
 use crate::chess::{Board, Color, File, Move, MoveList, Piece, Square};
 use crate::policy::MoveIndex;
@@ -18,14 +19,24 @@ pub const POLICY_NUMBER_FEATURES: usize = NUMBER_POSITIONS;
 pub struct State {
     board: Board,
     prev_state_hashes: ArrayVec<u64, 100>,
+    policy_features: SparseVector,
 }
 
 impl State {
     pub fn from_board(board: Board) -> Self {
-        Self {
+        let mut state = Self {
             board,
             prev_state_hashes: ArrayVec::new(),
-        }
+            policy_features: SparseVector::with_capacity(32),
+        };
+        state.update_policy_features();
+        state
+    }
+
+    fn update_policy_features(&mut self) {
+        let mut vec = SparseVector::with_capacity(32);
+        self.policy_features_map(|idx| vec.push(idx));
+        self.policy_features = vec;
     }
 
     #[must_use]
@@ -62,14 +73,21 @@ impl State {
     pub fn from_fen(fen: &str) -> Self {
         let board = Board::from_fen(fen);
 
-        Self {
+        let mut state = Self {
             board,
             prev_state_hashes: ArrayVec::new(),
-        }
+            policy_features: SparseVector::with_capacity(32),
+        };
+        state.update_policy_features();
+        state
     }
 
     pub fn board(&self) -> &Board {
         &self.board
+    }
+
+    pub fn policy_features(&self) -> &SparseVector {
+        &self.policy_features
     }
 
     pub fn side_to_move(&self) -> Color {
@@ -131,6 +149,7 @@ impl State {
         self.prev_state_hashes.push(self.hash());
 
         self.board.make_move(mov);
+        self.update_policy_features();
 
         if self.board.halfmove_clock() == 0 {
             self.prev_state_hashes.clear();
