@@ -1,0 +1,9 @@
+[package]
+name = "goober-layer"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+goober-core = { path = "../goober-core" }
